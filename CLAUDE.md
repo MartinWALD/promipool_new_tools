@@ -134,7 +134,7 @@ Die Anwendung benötigt Streamlit Secrets (`.streamlit/secrets.toml`):
 
 1. **Hardcoded API Keys**: Promipool API Keys sind im Code sichtbar (Sicherheitsrisiko)
 2. **Google Sheets Integration**: Teilweise auskommentiert, scheint nicht aktiv genutzt
-3. **Telegram Notification**: Bot Token ist hardcoded in `send_telegram_notification()`
+3. **Telegram Notification**: ✅ BEHOBEN - Bot Token jetzt in Streamlit Secrets ausgelagert (Zeile 1123-1138 in `07-PP_Article_07_25_v3.py`)
 4. **Error Handling**: Minimales Error Handling bei API-Calls
 
 ## Code-Stil

@@ -1121,25 +1121,38 @@ def process_text_for_social_facebook(result_text):
 
 
 def send_telegram_notification(input_data, result):
-    bot_token = '6070390869:AAEkL6r7dkw-nFUUiQSb27-hlbCC2H55ewQ'
-    channel_id = '-1002063095818'
-    
+    """
+    Sends Telegram notification using credentials from Streamlit secrets.
+    Requires 'telegram_bot_token' and 'telegram_channel_id' in secrets.toml
+    """
+    # Load from Streamlit secrets instead of hardcoding
+    try:
+        bot_token = st.secrets.get("telegram_bot_token")
+        channel_id = st.secrets.get("telegram_channel_id")
+
+        if not bot_token or not channel_id:
+            st.warning("⚠️ Telegram credentials not configured in secrets.toml")
+            return
+    except Exception as e:
+        st.warning(f"⚠️ Telegram secrets not available: {str(e)}")
+        return
+
     if isinstance(input_data, list):
         # It's a list of URLs
         input_text = "URLs:\n" + "\n".join(input_data)
     else:
         # It's a text input
         input_text = "USER_TEXT"
-    
+
     message_text = f"{input_text}\n\nResult:\n{result}"
-    
+
     api_url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
-    
+
     data = {
         'chat_id': channel_id,
         'text': message_text
     }
-    
+
     try:
         response = requests.post(api_url, data=data)
         if response.status_code == 200:

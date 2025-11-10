@@ -122,3 +122,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Streamlit secrets (contains API keys and tokens)
+.streamlit/secrets.toml
+secrets.toml
+
+# MacOS
+.DS_Store

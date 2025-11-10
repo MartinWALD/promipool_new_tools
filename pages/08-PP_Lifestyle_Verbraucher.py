@@ -352,9 +352,10 @@ def truncate_text_for_sheets(text: str, max_length: int = 45000) -> str:
     return final_text
 
 def update_google_sheet(date: str, time: str, source: str, original_text: str,
-                    result_text: str, short_script: str, long_script: str, tool: str) -> tuple[bool, str]:
+                    result_text: str, video_article_long: str = "", video_article_short: str = "", tool: str = "") -> tuple[bool, str]:
     """
-    Updates Google Sheet with article generation data, including video scripts.
+    Updates Google Sheet with article generation data (Standard + Video-Artikel Lang + Kurz).
+    Scripts wurden entfernt - nur noch die 3 Hauptformate werden gespeichert.
     """
     # Check if worksheet is available
     if worksheet is None:
@@ -364,8 +365,8 @@ def update_google_sheet(date: str, time: str, source: str, original_text: str,
         truncated_source = truncate_text_for_sheets(source)
         truncated_original = truncate_text_for_sheets(original_text)
         truncated_result = truncate_text_for_sheets(result_text)
-        truncated_short_script = truncate_text_for_sheets(short_script)
-        truncated_long_script = truncate_text_for_sheets(long_script)
+        truncated_video_article_long = truncate_text_for_sheets(video_article_long)
+        truncated_video_article_short = truncate_text_for_sheets(video_article_short)
 
         worksheet.append_row([
             date,
@@ -373,16 +374,16 @@ def update_google_sheet(date: str, time: str, source: str, original_text: str,
             truncated_source,
             truncated_original,
             truncated_result,
-            truncated_short_script,
-            truncated_long_script,
+            truncated_video_article_long,
+            truncated_video_article_short,
             tool
         ])
 
         was_truncated = (len(source) > 45000 or
                         len(original_text) > 45000 or
                         len(result_text) > 45000 or
-                        len(short_script) > 45000 or
-                        len(long_script) > 45000)
+                        len(video_article_long) > 45000 or
+                        len(video_article_short) > 45000)
 
         if was_truncated:
             return True, "Data saved successfully but some fields were truncated due to length limits"
@@ -1015,9 +1016,252 @@ Wichtig: Direkte Zitate müssen exakt übernommen werden. ALLE ZITATE MÜSSEN IN
     result = convert_source_quotes_to_german(result)
     return result
 
-def process_text_for_video_script_short(result_text):
+def process_text_for_video_article_long(result_text: str, source_info: str = "") -> str:
     """
-    Generiert kurzes TikTok-Script (40 Sek., ca. 75-85 Worte) nach Promipool TikTok Playbook
+    Generiert einen langen Video-Artikel OHNE Zwischenüberschriften, mit starkem Hook am Anfang
+    NUR Headline (KEIN Untertitel), mit Hashtags am Ende
+    """
+    prompt = f"""Erstelle einen ausführlichen Video-Artikel für Lifestyle/Verbraucher-Content basierend auf dem generierten Artikel.
+
+📹 FORMAT: Video-Artikel Lang
+📝 STRUKTUR: NUR Headline + Fließtext OHNE Zwischenüberschriften (###)
+🎯 HOOK: Starker Einstieg mit Zahl/Betrag in den ersten 8-12 Worten
+#️⃣ HASHTAGS: Am Ende des Artikels
+
+🎣 HOOK-REGEL (KRITISCH!):
+- Die ersten 2 Sätze müssen wie ein starker Hook funktionieren
+- PFLICHT: Konkrete Zahl, Betrag oder Anzahl in den ersten 8-12 Worten
+- Schockierend, überraschend oder dringend
+
+🔥 HOOK-FORMELN:
+1. **Konkrete Summe + Versprechen**: "[Betrag] geschenkt! So..."
+2. **Warnung + Konkreter Verlust**: "Achtung: Dieser Fehler kostet [Betrag]!"
+3. **Anzahl Betroffene + Relevanz**: "[Millionen] Menschen betroffen!"
+4. **Zeitdruck + Vorteil**: "Nur noch bis [Datum]: [Betrag] sichern!"
+5. **Schock-Element**: "Krass: Hier verschenken Deutsche [Betrag]!"
+
+✅ PERFEKTE HOOK-BEISPIELE:
+  * "1.076 Euro geschenkt! So nutzen Rentner den Freibetrag optimal."
+  * "Achtung: Dieser Fehler kostet Rentner 430 Euro monatlich!"
+  * "21 Millionen Rentner betroffen – das ändert sich ab Januar!"
+
+📊 ARTIKEL-STRUKTUR:
+1. **Hook-Absatz** (2-3 Sätze): Starker Einstieg mit Zahl/Betrag
+2. **Hauptteil** (4-6 Absätze): Alle wichtigen Informationen aus dem Original-Artikel
+3. **Praktische Details**: Konkrete Zahlen, Beispiele, Regelungen
+4. **Abschluss**: Wichtigster Takeaway oder Handlungsempfehlung
+5. **Hashtags** (3-5 relevante Tags am Ende)
+
+🎨 WICHTIGE FORMATIERUNGS-REGELN:
+- **NUR Headline** - KEIN Untertitel, KEIN Abstract
+- **KEINE Zwischenüberschriften (###)** - nur Fließtext mit Absätzen
+- **KEINE Bulletpoints** - alles in Satzform
+- **Leerzeilen zwischen Absätzen** für bessere Lesbarkeit
+- **Quellenangaben kursiv**: laut *Finanztip*, so *Stiftung Warentest*
+- **Absatzlänge**: 3-5 Sätze pro Absatz
+
+📏 LÄNGE:
+- Optimal: 200-250 Wörter (NICHT länger!)
+- 4-5 Absätze (kompakt!)
+- Fokus auf das Wichtigste - keine Redundanzen
+
+#️⃣ HASHTAGS (am Ende des Artikels):
+- 3-5 relevante Hashtags
+- Kategoriebasiert: #rente #finanzen #verbraucher #gesundheit #wohnen #lifestyle
+- Format: Am Ende nach einer Leerzeile
+
+🎨 TONALITÄT (NEUTRAL - KEIN SIEZEN, KEIN DUZEN):
+- Informativ und sachlich
+- KEINE direkte Ansprache mit "Sie" oder "Du"
+- STATTDESSEN: "Rentner können", "Betroffene sollten", "Verbraucher haben Anspruch"
+- Fokus auf praktischen Nutzen ohne persönliche Anrede
+- Verständliche, neutrale Sprache
+
+✅ GUTE FORMULIERUNGEN (neutral):
+  * "Rentner können bis zu 1.076 Euro hinzuverdienen"
+  * "Betroffene sollten die Regelungen kennen"
+  * "Wer die Freibeträge nutzt, profitiert"
+  * "Das bedeutet konkret für Witwenrentner"
+  * "Wichtig: Nicht alle Einkommensarten werden angerechnet"
+
+❌ SCHLECHTE FORMULIERUNGEN (zu direkt):
+  * "Sie können bis zu 1.076 Euro hinzuverdienen" → ZU FORMELL
+  * "Du kannst bis zu 1.076 Euro hinzuverdienen" → ZU INFORMELL
+  * "Nutzen Sie den Freibetrag" → DIREKTES SIEZEN
+  * "Hol dir den Freibetrag" → DIREKTES DUZEN
+
+⚡ KRITISCH:
+- Der Hook ist das Wichtigste!
+- KEINE ### Überschriften verwenden
+- KEIN Untertitel, KEIN Abstract
+- Alle wichtigen Infos aus dem Original übernehmen
+- Mit Quellenangaben arbeiten (kursiv)
+- Hashtags am Ende anfügen
+
+BEISPIEL-STRUKTUR (200-250 Wörter, neutrale Tonalität):
+
+Headline: Witwenrente und Nebenverdienst: 1.076 Euro Freibetrag
+
+Artikeltext:
+Rentner aufgepasst: 1.076 Euro Freibetrag nutzen! Diese Summe können Witwenrentner seit Juli 2025 hinzuverdienen, ohne dass ihre Rente gekürzt wird.
+
+Die Deutsche Rentenversicherung hat die Freibeträge angepasst. Das bedeutet konkret: Wer Witwenrente bezieht und nebenbei arbeitet, kann bis zu diesem Betrag verdienen. Pro Kind erhöht sich der Freibetrag um weitere 228,42 Euro, wie *Merkur* berichtet.
+
+Bei Überschreitung wird das Einkommen angerechnet. Die Anrechnung variiert je nach Einkommensart: Bei Arbeitseinkommen werden 40 Prozent angerechnet, bei Selbstständigkeit 39,80 Prozent. Laut *Finanztip* erfolgt die Überprüfung jährlich zum 1. Juli.
+
+Wichtig: Nicht alle Einkommensarten werden angerechnet. Riester-Rente, Wohngeld und Kindergeld bleiben außen vor. Wer die Freibeträge kennt, kann Rente und Nebenverdienst optimal kombinieren.
+
+#rente #altersvorsorge #finanzen #verbraucher #geldtipps
+
+---
+
+Original-Artikel:
+{result_text}
+
+Erstelle jetzt den Video-Artikel Lang mit starkem Hook und Hashtags:
+
+Headline:
+[Knackige Headline - max. 60 Zeichen]
+
+Artikeltext:
+[Fließtext OHNE ### Überschriften, mit Hook am Anfang, Hashtags am Ende]"""
+
+    return generate_text(prompt)
+
+def process_text_for_video_article_short(result_text: str, source_info: str = "") -> str:
+    """
+    Generiert einen kurzen Video-Artikel (kompakt, auf das Wesentliche reduziert)
+    NUR Headline (KEIN Untertitel), mit starkem Hook und Hashtags
+    """
+    prompt = f"""Erstelle einen kurzen, kompakten Video-Artikel für Lifestyle/Verbraucher-Content basierend auf dem generierten Artikel.
+
+📹 FORMAT: Video-Artikel Kurz (Kompaktversion)
+📝 STRUKTUR: NUR Headline + 2-3 kurze Absätze, auf das Wesentliche reduziert
+🎯 HOOK: Starker Einstieg mit Zahl/Betrag im ersten Satz
+#️⃣ HASHTAGS: Am Ende des Artikels
+
+🎣 HOOK-REGEL (KRITISCH!):
+- Der erste Satz MUSS wie ein starker Hook funktionieren
+- PFLICHT: Konkrete Zahl, Betrag oder Anzahl in den ersten 8-12 Worten
+- Schockierend, überraschend oder dringend
+
+🔥 HOOK-FORMELN:
+1. **Konkrete Summe + Versprechen**: "[Betrag] geschenkt! So..."
+2. **Warnung + Konkreter Verlust**: "Achtung: Dieser Fehler kostet [Betrag]!"
+3. **Anzahl Betroffene + Relevanz**: "[Millionen] Menschen betroffen!"
+
+✅ PERFEKTE HOOK-BEISPIELE:
+  * "1.076 Euro geschenkt! So nutzen Rentner den Freibetrag optimal."
+  * "Achtung: Dieser Fehler kostet Rentner 430 Euro monatlich!"
+  * "21 Millionen Rentner betroffen – das ändert sich ab Januar!"
+
+📊 ARTIKEL-STRUKTUR:
+1. **Hook-Absatz** (2-3 Sätze): Starker Einstieg mit Zahl/Betrag + Kern der Info
+2. **Hauptinfo-Absatz** (2-3 Sätze): Die wichtigsten Fakten kompakt
+3. **Takeaway-Absatz** (1-2 Sätze): Wichtigster Punkt zum Mitnehmen
+4. **Hashtags** (3-5 relevante Tags am Ende)
+
+🎨 FORMATIERUNG:
+- **NUR Headline** - KEIN Untertitel, KEIN Abstract
+- **2-3 kurze Absätze** - auf das Wesentliche reduziert
+- **Keine Überschriften im Text**
+- **Quellenangaben kursiv**: laut *Finanztip*, so *Stiftung Warentest*
+- **Kurze, prägnante Sätze**
+
+📏 LÄNGE:
+- Insgesamt 120-150 Wörter
+- Extrem kompakt - nur die wichtigsten Infos
+- Keine unnötigen Details
+
+#️⃣ HASHTAGS (am Ende des Artikels):
+- 3-5 relevante Hashtags
+- Kategoriebasiert: #rente #finanzen #verbraucher #gesundheit #wohnen #lifestyle
+- Format: Am Ende nach einer Leerzeile
+
+🎨 TONALITÄT (NEUTRAL - KEIN SIEZEN, KEIN DUZEN):
+- Informativ und direkt
+- KEINE direkte Ansprache mit "Sie" oder "Du"
+- STATTDESSEN: "Rentner können", "Betroffene sollten", "Wer ... kann"
+- Fokus auf das Wichtigste ohne persönliche Anrede
+- Verständliche, neutrale Sprache
+- Keine Redundanzen!
+
+✅ GUTE FORMULIERUNGEN (neutral):
+  * "Rentner können hinzuverdienen"
+  * "Betroffene sollten beachten"
+  * "Wer die Freibeträge nutzt, profitiert"
+  * "Wichtig für Witwenrentner"
+
+❌ SCHLECHTE FORMULIERUNGEN (zu direkt):
+  * "Sie können hinzuverdienen" → ZU FORMELL
+  * "Du kannst hinzuverdienen" → ZU INFORMELL
+
+⚡ KRITISCH:
+- Der Hook im ersten Satz ist das Wichtigste!
+- Nur die essentiellen Infos - keine Details
+- KEIN Untertitel, KEIN Abstract
+- Extrem kompakt und auf den Punkt
+- Mit Quellenangaben arbeiten (kursiv)
+- Hashtags am Ende
+- Neutrale Sprache ohne direkte Anrede
+
+BEISPIEL (neutrale Tonalität):
+
+Headline: Witwenrente: 1.076 Euro Freibetrag
+
+Artikeltext:
+Rentner aufgepasst: 1.076 Euro Freibetrag! Diese Summe können Witwenrentner seit Juli 2025 hinzuverdienen, ohne dass die Rente gekürzt wird. Pro Kind erhöht sich der Betrag um weitere 228,42 Euro, wie *Merkur* berichtet.
+
+Bei Überschreitung wird das Einkommen je nach Art unterschiedlich angerechnet – bei Arbeitseinkommen 40 Prozent, bei Selbstständigkeit 39,80 Prozent. Laut *Finanztip* bleiben Riester-Rente, Wohngeld und Kindergeld außen vor.
+
+Wer die Regelungen kennt, kann Rente und Nebenverdienst optimal kombinieren. Die Überprüfung erfolgt jährlich zum 1. Juli.
+
+#rente #altersvorsorge #finanzen #verbraucher #geldtipps
+
+---
+
+Original-Artikel:
+{result_text}
+
+Erstelle jetzt den Video-Artikel Kurz - extrem kompakt mit starkem Hook und Hashtags:
+
+Headline:
+[Knackige Headline - max. 60 Zeichen]
+
+Artikeltext:
+[2-3 kurze Absätze mit Hook am Anfang, nur das Wesentliche, Hashtags am Ende]"""
+
+    return generate_text(prompt)
+
+def extract_video_article_components(article_result: str) -> tuple:
+    """
+    Extrahiert Headline und Artikeltext aus Video-Artikel (ohne Untertitel/Abstract/Meta)
+    """
+    headline_pattern = r"Headline:\s*(.*?)\n+"
+
+    headline = re.search(headline_pattern, article_result, re.DOTALL)
+
+    # Extract content
+    content = article_result
+    if headline:
+        content = re.sub(headline_pattern, "", content, flags=re.DOTALL).strip()
+
+    # Remove "Artikeltext:" label
+    content = re.sub(r"Artikeltext:\s*\n*", "", content, flags=re.MULTILINE)
+    content = content.strip()
+
+    clean_headline = headline.group(1).strip() if headline else ""
+
+    return clean_headline, content
+
+# ALTE SCRIPT-FUNKTIONEN ENTFERNT - Nicht mehr benötigt
+# process_text_for_video_script_short() - gelöscht
+# process_text_for_video_script_long() - gelöscht
+
+def OLD_process_text_for_video_script_short(result_text):
+    """
+    VERALTET - Generiert kurzes TikTok-Script (40 Sek., ca. 75-85 Worte) nach Promipool TikTok Playbook
+    Diese Funktion wird nicht mehr verwendet - Video-Artikel ersetzen die Scripts
     """
     prompt = f"""Erstelle ein kurzes TikTok-Video-Script für Lifestyle/Verbraucher-Content basierend auf dem Artikeltext.
 
@@ -1285,11 +1529,11 @@ def main():
                     result = process_text_for_seo_enhanced_lifestyle(original_text, source_info, custom_instructions)
                     st.success("✅ Artikel generiert")
 
-                # Step 5: Generate Video Scripts
-                with st.spinner('🎬 Generiere Video-Scripts... (ca. 30 Sek.)'):
-                    short_script = process_text_for_video_script_short(result)
-                    long_script = process_text_for_video_script_long(result)
-                    st.success("✅ Video-Scripts generiert")
+                # Step 5: Generate Video Articles (Lang & Kurz)
+                with st.spinner('🎬 Generiere Video-Artikel (Lang & Kurz)... (ca. 40 Sek.)'):
+                    video_article_long = process_text_for_video_article_long(result, source_info)
+                    video_article_short = process_text_for_video_article_short(result, source_info)
+                    st.success("✅ Video-Artikel generiert")
 
                 # Display results in columns
                 with col2:
@@ -1317,17 +1561,31 @@ def main():
 
                         article_container = display_article()
 
-                        # Display Video Scripts
+                        # Display Video Articles
                         st.markdown("---")
-                        st.subheader("📹 Video Scripts")
+                        st.subheader("📹 Video-Artikel Formate")
 
-                        with st.expander("Kurzes Video-Script (40 Sek.)", expanded=True):
-                            st.write(short_script)
-                            st.caption(f"Wortanzahl: {len(short_script.split())} Worte")
+                        with st.expander("🎬 Video-Artikel Lang (ohne Zwischenüberschriften, mit Hashtags)", expanded=True):
+                            video_headline_long, video_content_long = extract_video_article_components(video_article_long)
+                            st.markdown(f"""### {video_headline_long}
 
-                        with st.expander("Langes Video-Script (1:30 Min.)", expanded=True):
-                            st.write(long_script)
-                            st.caption(f"Wortanzahl: {len(long_script.split())} Worte")
+{video_content_long}""")
+                            st.caption(f"📊 Wortanzahl: {len(video_content_long.split())} Worte")
+
+                            # Speichere Video-Artikel Lang in Session State
+                            st.session_state['video_article_long_headline'] = video_headline_long
+                            st.session_state['video_article_long_content'] = video_content_long
+
+                        with st.expander("📝 Video-Artikel Kurz (kompakt, mit Hashtags)", expanded=False):
+                            video_headline_short, video_content_short = extract_video_article_components(video_article_short)
+                            st.markdown(f"""### {video_headline_short}
+
+{video_content_short}""")
+                            st.caption(f"📊 Wortanzahl: {len(video_content_short.split())} Worte")
+
+                            # Speichere Video-Artikel Kurz in Session State
+                            st.session_state['video_article_short_headline'] = video_headline_short
+                            st.session_state['video_article_short_content'] = video_content_short
 
                         send_article_to_pp_fragment()
                         edit_article(article_container)
@@ -1341,8 +1599,8 @@ def main():
                     source,
                     original_text,
                     result,
-                    short_script,
-                    long_script,
+                    video_article_long,
+                    video_article_short,
                     "Lifestyle-Verbraucher-Tool"
                 )
 
