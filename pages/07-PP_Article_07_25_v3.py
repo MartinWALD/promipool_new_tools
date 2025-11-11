@@ -644,6 +644,43 @@ def clean_article_text(text: str, is_intro: bool = False) -> str:
     # Join paragraphs with double newlines
     return '\n\n'.join(cleaned_paragraphs)
 
+def extract_video_article_components(article_result: str) -> tuple:
+    """
+    Extrahiert Headline, Artikeltext, Meta und Hashtags aus Video-Artikel (OHNE Untertitel/Abstract)
+    """
+    headline_pattern = r"Headline:\s*(.*?)\n+"
+    meta_pattern = r"Metabeschreibung:\s*(.*?)(?:\nHashtags:|$)"
+    hashtags_pattern = r"Hashtags:\s*(.*?)$"
+
+    headline = re.search(headline_pattern, article_result, re.DOTALL)
+    meta = re.search(meta_pattern, article_result, re.DOTALL)
+    hashtags = re.search(hashtags_pattern, article_result, re.DOTALL | re.MULTILINE)
+
+    # Get content by removing other components
+    content = article_result
+    if headline:
+        content = re.sub(headline_pattern, "", content, flags=re.DOTALL).strip()
+    if meta:
+        # Remove meta and hashtags section together
+        content = re.sub(r"Metabeschreibung:.*?(?:\nHashtags:.*?)?$", "", content, flags=re.DOTALL).strip()
+
+    # Clean up components
+    clean_headline = headline.group(1).replace('\n', ' ').strip() if headline else ""
+    clean_content = re.sub(r"Artikeltext:\s*\n+", "", content, flags=re.MULTILINE).strip()
+    clean_meta = meta.group(1).strip() if meta else ""
+    clean_hashtags = hashtags.group(1).strip() if hashtags else ""
+
+    # Entferne fehlerhafte Sternchen aus Headline und Meta
+    clean_headline = clean_headline.replace('**', '').strip()
+    clean_meta = clean_meta.replace('**', '').strip()
+
+    return (
+        clean_headline,   # Headline
+        clean_content,    # Content
+        clean_meta,       # Meta
+        clean_hashtags    # Hashtags
+    )
+
 def extract_article_components(article_result: str) -> tuple:
     """
     Extract components from GPT's output, keeping markdown intact.
@@ -812,6 +849,193 @@ Metabeschreibung: {st.session_state.meta}
                 
                 st.success("Artikel wurde erfolgreich überarbeitet!")
                 
+def process_text_for_video_article_promipool(article_text: str, source_info: str = "", custom_instructions: str = "", article_length: str = "lang") -> str:
+    """
+    Video-Artikel-Generator für Promipool mit neutraler Tonalität
+    article_length: "lang" (200-250 Wörter) oder "kurz" (150-200 Wörter)
+    """
+    # SCHRITT 1: Automatische Promipool-Kategorie-Erkennung
+    primary_module = analyze_theme_module_promipool_original(article_text, source_info)
+    module_info = get_module_info_promipool_original(primary_module)
+
+    print(f"🎯 Erkannte Promipool-Kategorie: {module_info['name']} ({primary_module})")
+    print(f"📊 Video-Artikel {article_length.upper()}")
+
+    # SCHRITT 2: Extrahiere echte Zitate und Fakten
+    real_quotes = extract_real_quotes_from_source_promipool(article_text)
+    concrete_facts = extract_concrete_facts_promipool(article_text)
+    available_sources = extract_sources_from_info_promipool(source_info)
+
+    # Wortanzahl je nach Länge - REDUZIERT nach Redaktionsfeedback
+    word_count = "150-180 Wörter" if article_length == "lang" else "100-120 Wörter"
+
+    # SCHRITT 3: Video-Artikel-Prompt (neutral, kursive Quellen, keine Zwischenüberschriften)
+    base_prompt = f"""KRITISCHE ANTI-HALLUZINATIONS-REGELN FÜR PROMIPOOL VIDEO-ARTIKEL - STRIKT BEFOLGEN:
+
+VIDEO-ARTIKEL BESONDERHEITEN:
+- NEUTRALE TONALITÄT: Keine direkte Ansprache mit "Sie" oder "Du"
+- STATTDESSEN: "Rentner können...", "Betroffene sollten...", "Der Prinz hat..."
+- KEINE ZWISCHENÜBERSCHRIFTEN: Durchgehender Fließtext
+- EXTREM KURZ UND PRÄGNANT: {word_count} - STRIKT EINHALTEN!
+- FAKTENORIENTIERT: Weniger emotional/dramatisch als Standard-Artikel
+- KEIN GESCHWAFEL: Nur die wichtigsten Kern-Informationen
+- WENIGER HINTERGRUND: Minimale Bandgeschichte, fokussiere auf AKTUELLE Story
+
+1. QUELLEN UND ZITATE (Entertainment-fokussiert):
+    - Verfügbare Entertainment-Quellen: {', '.join(available_sources) if available_sources else 'Nutze die Quellen aus der Quellenliste'}
+
+   WICHTIG FÜR PROMIPOOL-QUELLENANGABEN:
+    - ALLE Quellennamen im Text IMMER kursiv: *Bild.de*, *RTL.de*, *Gala.de*, *Bunte.de*, *ProSieben.de*
+    - IMMER kursiv hervorgehoben: laut *RTL.de*
+    - FORMAT: laut *Quelle*, *Quelle* berichtet, wie *Quelle* meldet
+    - BEISPIELE: laut *Bild.de*, so *Gala.de*, wie *RTL.de* berichtet
+
+   ZITATE (Celebrity/Entertainment-Fokus):
+    - ABSOLUT KRITISCH: JEDES Celebrity-Zitat SOFORT mit Quelle
+    - Format: „Zitat hier", so *Quellenname*
+    - WORTGETREUE ÜBERNAHME: Celebrity-Zitate müssen EXAKT übernommen werden
+    - DEUTSCHE ÜBERSETZUNG: Alle Zitate müssen ins Deutsche übersetzt werden
+
+VERFÜGBARE ECHTE CELEBRITY-ZITATE AUS DEM ORIGINALTEXT:
+{chr(10).join([f'• "{quote}" (direkte Aussage)' for quote in real_quotes[:3]]) if real_quotes else '• Keine direkten Celebrity-Zitate im Originaltext gefunden - verwende nur indirekte Rede'}
+
+VERFÜGBARE ENTERTAINMENT-FAKTEN:
+{chr(10).join([f'• {fact[:100]}...' for fact in concrete_facts[:3]]) if concrete_facts else '• Nutze nur Entertainment-Fakten aus dem bereitgestellten Originaltext'}
+
+ERKANNTE PROMIPOOL-KATEGORIE: {primary_module} ({module_info['name']})
+KATEGORIE-FOKUS: {module_info['focus']}
+
+VIDEO-ARTIKEL STIL-REGELN:
+- NEUTRALE SPRACHE: Keine "Sie"/"Du"-Ansprache
+- RICHTIG: "Rentner können von der Regelung profitieren"
+- FALSCH: "Sie können von der Regelung profitieren"
+- RICHTIG: "Prinz William hat sich geäußert"
+- FALSCH: "Der Prinz, bekannt aus..., hat sich geäußert"
+- FAKTENBASIERT: Direkte Informationsvermittlung ohne emotionale Überhöhung
+- KLAR UND PRÄZISE: Kurze Sätze, keine Verschachtelungen
+- KEINE AUSRUFEZEICHEN: Sachlicher Ton durchgehend
+
+ANTI-KI-STIL FÜR VIDEO-ARTIKEL:
+- KEINE Komma-Einschübe nach Namen: "Name, der/die..." ist verboten
+- DIREKT beginnen: "Moderatorin Name" oder einfach "Name"
+- KEINE emotionalen Verstärker: "endlich", "überraschend", "sensation"
+- SACHLICH bleiben: Fakten präsentieren, nicht dramatisieren
+
+QUELLENNUTZUNG (Video-Artikel):
+- Verfügbare Quellen: {', '.join([f'*{source}*' for source in available_sources])}
+- ALLE Quellennamen KURSIV: *Bild.de*, *RTL.de*, *Gala.de*
+- SPARSAM verwenden: 2-3 Quellenangaben im gesamten Artikel
+- NUR bei direkten Zitaten oder wichtigen Fakten
+
+{source_info}
+
+ENTERTAINMENT-QUELLENTEXT:
+{article_text}
+
+KRITISCHE ERINNERUNG:
+- {word_count} einhalten
+- KEINE Zwischenüberschriften
+- NEUTRALE Tonalität ohne direkte Ansprache
+- ALLE Zitate müssen ins Deutsche übersetzt werden
+- Quellen KURSIV: *Quellenname*
+"""
+
+    # Add custom instructions if provided
+    if custom_instructions.strip():
+        base_prompt += f"\n\nWICHTIG: Zusätzliche spezifische Anweisungen für diesen Video-Artikel:\n{custom_instructions}"
+
+    # Complete the prompt with structure requirements
+    complete_prompt = base_prompt + f"""
+📹 FORMAT: Video-Artikel ({article_length.upper()})
+📝 STRUKTUR: NUR Headline + Fließtext OHNE Zwischenüberschriften (###)
+🎯 HOOK: Starker Einstieg in den ersten 2 Sätzen
+#️⃣ HASHTAGS: 5-7 relevante Hashtags am Ende (PFLICHT!)
+
+Der Video-Artikel muss folgende Elemente enthalten:
+
+Headline: Entwickle eine prägnante Headline (max. 60 Zeichen), die das Hauptthema klar benennt. Keine Ausrufezeichen.
+
+WICHTIG: KEIN Untertitel! KEIN Abstract! Direkt mit Artikeltext starten!
+
+Artikeltext: Der Video-Artikel soll EXAKT {word_count} umfassen - NICHT MEHR!
+
+⚠️ ANTI-GESCHWAFEL-REGELN (KRITISCH!):
+- NUR die 3-4 wichtigsten Kern-Fakten
+- KEINE ausschweifende Bandgeschichte oder Karriere-Details
+- MINIMALER Hintergrund - nur wenn ABSOLUT notwendig
+- FOKUS auf die AKTUELLE Story/Nachricht
+- Jeder Satz muss ESSENTIAL sein - sonst raus!
+- BEISPIEL: Bei Todesfall → Tod, Todesursache, Familie-Zitat, Vermächtnis. FERTIG!
+
+🎣 HOOK-REGEL (KRITISCH!):
+- Die ersten 1-2 Sätze = ALLES!
+- Starte mit der wichtigsten Information oder einer konkreten Zahl/Datum
+- RICHTIG: "Der legendäre KISS-Gitarrist Ace Frehley verstarb am 16. Oktober im Alter von 74 Jahren."
+- FALSCH: "Eine traurige Nachricht erreicht die Musikwelt..."
+
+WICHTIGE REGELN FÜR VIDEO-ARTIKEL:
+- KEINE Zwischenüberschriften - durchgehender Fließtext
+- KEINE direkte Ansprache (Sie/Du)
+- NEUTRALE Formulierung: "Rentner können...", "Der Musiker verstarb..."
+- EXTREM KURZ: {word_count} - STRIKT EINHALTEN!
+- FAKTENBASIERT: Weniger emotional als Standard-Artikel
+- Quellen IMMER KURSIV: laut *Bild.de*, so *RTL.de* berichtet
+- NIEMALS Quellen in Anführungszeichen: laut "Bild" ist FALSCH
+- KEINE Ausrufezeichen
+- Direkte Zitate NUR wenn essentiell: „Zitat", so *Quelle*
+
+Metabeschreibung: Am Ende des Artikels, füge eine prägnante SEO-Metabeschreibung hinzu (150-160 Zeichen).
+
+Besonderheiten:
+Alle verwendeten Zitate müssen wörtlich und unverändert aus dem Entwurf übernommen werden.
+Übersetze Zitate immer in deutsche Sprache.
+WICHTIG: SETZE IMMER DIE KOMBINATION AUS VOR- UND NACHNAME.
+WICHTIG: Verwende korrekte Quellenangaben IMMER KURSIV: *Bild.de*, *RTL.de*, *Gala.de*
+WICHTIG: NIEMALS Quellenangaben in Anführungszeichen
+WICHTIG: KEINE Zwischenüberschriften im Artikeltext
+WICHTIG: KEIN Untertitel, KEIN Abstract
+
+Checkliste:
+Sind {word_count} STRIKT eingehalten? (Nicht mehr!)
+Ist KEIN Geschwafel enthalten? (Nur Kern-Fakten!)
+Ist die neutrale Tonalität durchgehend (kein "Sie"/"Du")?
+Startet der Artikel mit einem starken Hook?
+Sind ALLE Quellenangaben kursiv (*Quelle*) und NICHT in Anführungszeichen?
+Gibt es KEINE Zwischenüberschriften im Artikeltext?
+Gibt es KEINEN Untertitel und KEIN Abstract?
+Sind 5-7 Hashtags am Ende?
+
+Der Artikel muss die folgenden Komponenten beinhalten und genau so formatiert sein:
+
+Headline:
+[Deine Headline OHNE ** oder andere Formatierung]
+
+Artikeltext:
+[Hier kommt der Haupttext als durchgehender Fließtext OHNE Zwischenüberschriften, OHNE Bulletpoints, mit korrekten kursiven Quellenangaben. MAXIMAL {word_count}!]
+
+[Optional: Weiterer kurzer Absatz - nur wenn noch unter {word_count}]
+
+Formatierungsregeln:
+- KEINE Sternchen (**) um Headline oder Metabeschreibung
+- KEINE Zwischenüberschriften (### verboten!)
+- Lasse immer eine Leerzeile zwischen Absätzen
+- Quellen IMMER KURSIV: *Bild.de* (mit einfachen Sternchen)
+- NIEMALS Quellen in Anführungszeichen: "Bild.de" ist FALSCH
+- Keine Anführungszeichen außer bei direkten Zitaten
+- KEIN Geschwafel - nur Essential Facts!
+
+Metabeschreibung:
+[Deine Metabeschreibung OHNE ** oder Formatierung]
+
+Hashtags:
+[5-7 relevante Hashtags für Social Media, z.B. #AceFrehley #KISS #RockLegende #Promi #Musiknews]
+
+Hier ist der Text des Entwurfsartikels: {article_text}"""
+
+    result = generate_text(complete_prompt)
+    result = convert_source_quotes_to_german(result)
+    return result
+
 def process_text_for_seo_enhanced_promipool(article_text: str, source_info: str = "", custom_instructions: str = "") -> str:
     """
     Erweiterte SEO-Funktion mit ALLEN BP-Features + Original Promipool-Struktur
@@ -1220,7 +1444,7 @@ def main():
 
     with col1:
         st.title("Generate Article from Multiple Sources")
-        
+
         st.subheader("Input URLs")
         num_url_inputs = st.number_input("Number of URLs to process", min_value=0, max_value=5, value=1)
         urls = []
@@ -1228,7 +1452,7 @@ def main():
             url = st.text_input(f"Enter URL {i+1}", key=f"url_{i}")
             if url:
                 urls.append(url)
-        
+
         user_text = st.text_area("Or enter the text you'd like to rewrite:", height=200)
         # Add custom instructions textarea
         custom_instructions = st.text_area(
@@ -1237,7 +1461,7 @@ def main():
             placeholder="Example: 'Focus more on technical details' or 'Emphasize sustainability aspects'",
             height=150
         )
-        
+
         uploaded_file = st.file_uploader("Or upload a PDF file:", type="pdf")
         
         st.warning("If URL scraping doesn't work, we'll try using Jina.ai as a fallback.", icon="⚠️")
@@ -1269,9 +1493,20 @@ def main():
                         source = "Uploaded PDF"
                 
                 if original_text:
-                    # Generate 1. Draft
+                    # Generate ALL 3 formats
                     source_info = create_source_info_promipool(urls, uploaded_file, bool(user_text.strip()), url_contents if 'url_contents' in locals() else {})
-                    result = process_text_for_seo_enhanced_promipool(original_text, source_info, custom_instructions)
+
+                    # 1. Standard Artikel
+                    st.info("📰 Generiere Standard-Artikel (400-600 Wörter, emotional)...")
+                    result_standard = process_text_for_seo_enhanced_promipool(original_text, source_info, custom_instructions)
+
+                    # 2. Video-Artikel Lang
+                    st.info("🎬 Generiere Video-Artikel Lang (200-250 Wörter, neutral)...")
+                    result_video_lang = process_text_for_video_article_promipool(original_text, source_info, custom_instructions, article_length="lang")
+
+                    # 3. Video-Artikel Kurz
+                    st.info("🎬 Generiere Video-Artikel Kurz (150-200 Wörter, neutral)...")
+                    result_video_kurz = process_text_for_video_article_promipool(original_text, source_info, custom_instructions, article_length="kurz")
                     
                     with col2:
                         st.title("Original Content:")
@@ -1289,22 +1524,81 @@ def main():
                             
                     with col3:
                         if original_text:
-                            # Initial Artikel generieren
-                            title, subtitle, abstract, content, meta = extract_article_components(result)
-                            st.session_state['title'] = title
-                            st.session_state['subtitle'] = subtitle
-                            st.session_state['abstract'] = abstract
-                            st.session_state['content'] = content
-                            st.session_state['meta'] = meta
-                            
-                            # Artikel Container erstellen und speichern
-                            article_container = display_article()
-                            
-                            # CMS-Optionen
+                            # ==================== STANDARD ARTIKEL ====================
+                            st.markdown("## 📰 Standard Artikel")
+                            st.markdown("*400-600 Wörter, emotionaler Stil, Zwischenüberschriften*")
+                            st.markdown("---")
+
+                            title_std, subtitle_std, abstract_std, content_std, meta_std = extract_article_components(result_standard)
+
+                            st.markdown(f"""
+**Titel:** {title_std}
+
+**Untertitel:** {subtitle_std}
+
+**Abstract:** {abstract_std}
+
+**Artikeltext:**
+{content_std}
+
+**Metabeschreibung:** {meta_std}
+""")
+
+                            # Session State für Standard-Artikel (für API-Versand)
+                            st.session_state['title'] = title_std
+                            st.session_state['subtitle'] = subtitle_std
+                            st.session_state['abstract'] = abstract_std
+                            st.session_state['content'] = content_std
+                            st.session_state['meta'] = meta_std
+
+                            st.markdown("---")
+                            st.markdown("")
+
+                            # ==================== VIDEO-ARTIKEL LANG ====================
+                            st.markdown("## 🎬 Video-Artikel Lang")
+                            st.markdown("*150-180 Wörter, neutrale Tonalität, keine Zwischenüberschriften*")
+                            st.markdown("---")
+
+                            headline_vl, content_vl, meta_vl, hashtags_vl = extract_video_article_components(result_video_lang)
+
+                            st.markdown(f"""
+**Headline:** {headline_vl}
+
+**Artikeltext:**
+{content_vl}
+
+**Metabeschreibung:** {meta_vl}
+
+**Hashtags:** {hashtags_vl}
+""")
+
+                            st.markdown("---")
+                            st.markdown("")
+
+                            # ==================== VIDEO-ARTIKEL KURZ ====================
+                            st.markdown("## 🎬 Video-Artikel Kurz")
+                            st.markdown("*100-120 Wörter, neutrale Tonalität, keine Zwischenüberschriften*")
+                            st.markdown("---")
+
+                            headline_vk, content_vk, meta_vk, hashtags_vk = extract_video_article_components(result_video_kurz)
+
+                            st.markdown(f"""
+**Headline:** {headline_vk}
+
+**Artikeltext:**
+{content_vk}
+
+**Metabeschreibung:** {meta_vk}
+
+**Hashtags:** {hashtags_vk}
+""")
+
+                            st.markdown("---")
+
+                            # CMS-Optionen (nur für Standard-Artikel)
+                            st.markdown("### 📤 API-Versand")
+                            st.info("ℹ️ Nur Standard-Artikel können an die API gesendet werden. Video-Artikel sind nur zur Ansicht.")
                             send_article_to_pp_fragment()
-                            
-                            # Bearbeitungsoptionen mit Container übergeben
-                            edit_article(article_container)
                                         
                         # Update Google Sheet
                         current_date = time.strftime("%Y-%m-%d")

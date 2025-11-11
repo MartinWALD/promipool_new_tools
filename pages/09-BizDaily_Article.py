@@ -14,8 +14,8 @@ import io
 
 # Page configuration
 st.set_page_config(
-    page_title="Generate Lifestyle/Verbraucher Article from Multiple Sources",
-    page_icon="📰",
+    page_title="BizDaily Article Generator",
+    page_icon="💼",
     layout="wide"
 )
 
