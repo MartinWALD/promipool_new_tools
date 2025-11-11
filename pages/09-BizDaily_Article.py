@@ -85,6 +85,9 @@ def create_source_info_lifestyle(urls, uploaded_file=None, user_text_provided=Fa
                 'welt.de': ('Welt', 'Tageszeitung Die Welt', 'Wirtschafts- und Verbrauchernews'),
                 't-online.de': ('t-online.de', 'Online-Portal t-online.de', 'Verbrauchernews'),
                 'bild.de': ('Bild', 'Boulevard-Zeitung Bild', 'Verbraucher- und Lifestyle-News'),
+                'zeit.de': ('Zeit', 'Wochenzeitung Die Zeit', 'Wirtschafts- und Gesellschaftsnews'),
+                'handelsblatt.com': ('Handelsblatt', 'Wirtschaftszeitung Handelsblatt', 'Wirtschaftsnachrichten'),
+                'ifo.de': ('ifo Institut', 'ifo Institut München', 'Wirtschaftsforschung'),
 
                 # Finanz & Versicherung
                 'check24.de': ('Check24', 'Vergleichsportal Check24', 'Finanz- und Versicherungsvergleiche'),
@@ -138,6 +141,10 @@ def analyze_theme_module_lifestyle(article_text: str, source_info: str = "") -> 
     full_text = (article_text + " " + source_info).lower()
 
     modules = {
+        'WIRTSCHAFT': {
+            'keywords': ['wirtschaft', 'industrie', 'unternehmen', 'wettbewerb', 'wettbewerbsfähigkeit', 'export', 'konjunktur', 'ifo', 'geschäftsklima', 'standort', 'produktion', 'maschinenbau', 'chemische industrie', 'energiepreis', 'handel', 'börse', 'dax'],
+            'high_priority': ['wirtschaft', 'industrie', 'unternehmen', 'wettbewerbsfähigkeit', 'ifo institut', 'konjunktur', 'export']
+        },
         'RENTE': {
             'keywords': ['rente', 'rentenversicherung', 'altersvorsorge', 'rentner', 'pensionär', 'ruhestand', 'rentenanspruch', 'rentenerhöhung', 'grundrente', 'erwerbsminderungsrente'],
             'high_priority': ['rente', 'rentenversicherung', 'altersvorsorge', 'rentner', 'grundrente']
@@ -185,6 +192,11 @@ def get_module_info_lifestyle(module_key: str) -> dict:
     Gibt Informationen zur erkannten Kategorie zurück
     """
     modules_info = {
+        'WIRTSCHAFT': {
+            'name': 'Wirtschaft & Industrie',
+            'focus': 'Wirtschafts-News, Industrie und Unternehmen',
+            'hashtags': ['#Wirtschaft', '#Industrie', '#Unternehmen', '#Standort', '#Konjunktur']
+        },
         'RENTE': {
             'name': 'Rente & Altersvorsorge',
             'focus': 'Renten-News, Altersvorsorge und Ruhestand',
@@ -280,6 +292,18 @@ def extract_sources_from_info_lifestyle(source_info):
             sources.append('Spiegel')
         elif 'focus' in description.lower():
             sources.append('Focus')
+        elif 'bild' in description.lower():
+            sources.append('Bild')
+        elif 'handelsblatt' in description.lower():
+            sources.append('Handelsblatt')
+        elif 'welt' in description.lower():
+            sources.append('Welt')
+        elif 't-online' in description.lower():
+            sources.append('t-online.de')
+        elif 'ifo' in description.lower() or 'institut' in domain.lower():
+            sources.append('ifo Institut')
+        elif 'zeit' in description.lower():
+            sources.append('Zeit')
         else:
             clean_domain = domain.replace('www.', '').replace('.de', '').replace('.com', '')
             sources.append(clean_domain.capitalize())
@@ -573,9 +597,9 @@ def extract_article_components(article_result: str) -> tuple:
     """
     Extract components from GPT's output, cleaning up formatting.
     """
-    title_pattern = r"Titel:\s*(.*?)\n+"
-    subtitle_pattern = r"Untertitel:\s*(.*?)\n{2,}"
-    abstract_pattern = r"Abstract:\s*(.*?)\n{2,}"
+    title_pattern = r"Titel:\s*(.*?)(?:\n|$)"
+    subtitle_pattern = r"Untertitel:\s*(.*?)(?:\n|$)"
+    abstract_pattern = r"Abstract:\s*(.*?)(?:\n{2,}|Artikeltext:)"
     meta_pattern = r"Metabeschreibung:\s*(.*?)(?:\nKeywords:|$)"
 
     title = re.search(title_pattern, article_result, re.DOTALL)
@@ -611,6 +635,19 @@ def extract_article_components(article_result: str) -> tuple:
     clean_subtitle = clean_field(subtitle.group(1) if subtitle else "")
     clean_abstract = clean_field(abstract.group(1) if abstract else "")
     clean_meta = clean_field(meta.group(1) if meta else "")
+
+    # FALLBACK: Wenn Titel leer ist, versuche ihn aus dem Abstract/Content zu generieren
+    if not clean_title or len(clean_title.strip()) == 0:
+        # Versuche ersten Satz aus Abstract als Titel zu nehmen (max 60 Zeichen)
+        if clean_abstract:
+            fallback_title = clean_abstract.split('.')[0].strip()
+            clean_title = fallback_title[:60] if len(fallback_title) > 60 else fallback_title
+        else:
+            clean_title = "Artikel ohne Titel - Bitte manuell ergänzen"
+
+    # FALLBACK: Wenn Untertitel leer ist, setze Standardtext
+    if not clean_subtitle or len(clean_subtitle.strip()) == 0:
+        clean_subtitle = "Weitere Informationen"
 
     # Clean content - remove "Artikeltext:" labels and **
     clean_content = re.sub(r"Artikeltext:\s*\n*", "", content, flags=re.MULTILINE)
@@ -759,13 +796,14 @@ def process_text_for_seo_enhanced_lifestyle(article_text: str, source_info: str 
 
     base_prompt = f"""KRITISCHE ANTI-HALLUZINATIONS-REGELN FÜR LIFESTYLE/VERBRAUCHER-ARTIKEL:
 
-1. QUELLEN UND ZITATE (Verbraucher-fokussiert):
+1. QUELLEN UND ZITATE (Verbraucher/Wirtschafts-fokussiert):
     - Verfügbare Quellen: {', '.join(available_sources) if available_sources else 'Nutze die Quellen aus der Quellenliste'}
 
-   QUELLENANGABEN:
-    - ALLE Quellennamen im Text IMMER kursiv: *Finanztip*, *Stiftung Warentest*, *Verbraucherzentrale*
-    - FORMAT: laut *Quelle*, *Quelle* berichtet, wie *Quelle* meldet
-    - BEISPIELE: laut *Finanztip*, so *Stiftung Warentest*, wie *Verbraucherzentrale* meldet
+   WICHTIG FÜR BIZ-DAILY-QUELLENANGABEN:
+    - ALLE Quellennamen im Text IMMER kursiv: *Finanztip*, *Handelsblatt*, *ifo Institut*, *Stiftung Warentest*, *Bild*, *Zeit*
+    - IMMER kursiv hervorgehoben: laut *Handelsblatt*
+    - FORMAT: laut *Quelle*, *Quelle* berichtet, wie *Quelle* meldet, so *Quelle*
+    - BEISPIELE: laut *ifo Institut*, so *Handelsblatt* berichtet, wie *Finanztip* meldet
 
    ZITATE (Experten-Fokus):
     - ABSOLUT KRITISCH: JEDES Zitat SOFORT mit Quelle
@@ -773,10 +811,10 @@ def process_text_for_seo_enhanced_lifestyle(article_text: str, source_info: str 
     - WORTGETREUE ÜBERNAHME: Zitate müssen EXAKT übernommen werden
     - DEUTSCHE ÜBERSETZUNG: Alle Zitate müssen ins Deutsche übersetzt werden
 
-   FAKTEN-QUELLENANGABEN:
-    - Pro Absatz mindestens eine strategische Quellenangabe
-    - WANN: Bei wichtigen Verbraucher-Infos, Zahlen, rechtlichen Details
-    - FORMAT: laut *Quellenname*, so *Quellenname* berichtet
+   FAKTEN-QUELLENANGABEN (1x pro Absatz):
+    - EXTREM WICHTIG: Mindestens eine strategische Quellenangabe pro Absatz
+    - WANN: Bei wichtigen Zahlen, Daten, Regelungen, Experten-Aussagen
+    - FORMAT: laut *Quellenname*, so *Quellenname* berichtet, wie *Quellenname* meldet
 
    ANFÜHRUNGSZEICHEN-VERBOT:
     - NIEMALS Anführungszeichen um Inhalte setzen, die im Original keine haben
@@ -784,9 +822,10 @@ def process_text_for_seo_enhanced_lifestyle(article_text: str, source_info: str 
     - NUR echte Direktzitate aus den Quellen in Anführungszeichen
 
 2. QUELLENVERTEILUNG:
-    - Verfügbare Quellen: {', '.join(available_sources) if available_sources else 'Finanztip, Stiftung Warentest'}
-    - ALLE Quellennamen immer kursiv: *Finanztip*, *Stiftung Warentest*
-    - VARIATION PFLICHT: laut *Quelle* | *Quelle* berichtet | wie *Quelle* meldet | heißt es bei *Quelle*
+    - Verfügbare Quellen: {', '.join(available_sources) if available_sources else 'Finanztip, Stiftung Warentest, ifo Institut, Handelsblatt, Bild, Zeit'}
+    - ALLE Quellennamen immer kursiv: *Finanztip*, *Handelsblatt*, *ifo Institut*, *Bild*, *Zeit*
+    - VARIATION PFLICHT - verwende unterschiedliche Formulierungen: laut *Quelle* | *Quelle* berichtet | wie *Quelle* meldet | heißt es bei *Quelle* | so *Quelle*
+    - NIEMALS die gleiche Formulierung zweimal verwenden!
     - Balance: Wichtige Fakten MIT Quelle, Allgemeinwissen OHNE Quelle
 
 VERFÜGBARE ECHTE ZITATE AUS DEM ORIGINALTEXT:
@@ -829,10 +868,22 @@ KATEGORIE-FOKUS: {module_info['focus']}
 
     QUELLENNUTZUNG MIT FINGERSPITZENGEFÜHL:
     - Verfügbare Quellen: {', '.join([f'*{source}*' for source in available_sources])}
+    - ZIEL: Alle Quellen verwenden, aber organisch und lesbar verteilt
     - BALANCE: Pro Absatz maximal 1-2 strategische Quellenangaben
-    - VARIATION PFLICHT: Jede Quelle mit unterschiedlicher Formulierung
+    - VARIATION PFLICHT: Jede Quelle mit unterschiedlicher Formulierung:
+    * laut *Quelle* | *Quelle* berichtet | wie *Quelle* meldet | heißt es bei *Quelle* | so *Quelle*
     - WANN zitieren: Bei wichtigen Fakten, Rechts-Infos, Zahlen, Experten-Aussagen
     - WANN NICHT: Bei Übergängen, Erklärungen, Allgemeinwissen
+    - NATÜRLICHER FLUSS wichtiger als Quellenanzahl!
+
+    QUELLENANGABEN-BALANCE (Fingerspitzengefühl):
+    - NICHT jeder Satz braucht eine Quelle - das wirkt überladen!
+    - PRO ABSATZ: Maximal 1-2 strategische Quellenangaben
+    - ZITATE: Jedes echte Zitat braucht SOFORT eine Quellenangabe
+    - FAKTEN: Wichtige Daten/Zahlen mit Quelle, aber nicht übertreiben
+    - NATÜRLICHER FLUSS: Quelle dort einfügen, wo sie organisch passt
+    - **ALLE QUELLENNAMEN IMMER KURSIV**: *ifo Institut*, *Handelsblatt*, *Finanztip*, *Bild*, *Zeit*
+    - **NIEMALS ohne Sternchen**: "laut dem ifo Institut" ist FALSCH → "laut *ifo Institut*" ist RICHTIG
 
 {source_info}
 
@@ -854,11 +905,23 @@ Wichtig: Direkte Zitate müssen exakt übernommen werden. ALLE ZITATE MÜSSEN IN
         base_prompt += f"\n\nWICHTIG: Zusätzliche spezifische Anweisungen:\n{custom_instructions}"
 
     complete_prompt = base_prompt + f"""
-    Der Artikel muss folgende Elemente enthalten:
+    🚨 KRITISCH: Der Artikel muss folgende Elemente ZWINGEND enthalten:
 
-    Titel: Entwickle einen klaren, informativen Titel (max. 60 Zeichen), der das Thema auf den Punkt bringt. Der Titel soll Verbraucher direkt ansprechen, relevante Keywords enthalten und zur {module_info['name']}-Kategorie passen. Vermeide übertriebene Dramatik - Klarheit und Relevanz stehen im Vordergrund.
+    Titel: **PFLICHT - DARF NICHT LEER SEIN!** Entwickle einen klaren, informativen Titel (STRIKT max. 60 Zeichen - KÜRZE wenn nötig!), der das Thema auf den Punkt bringt. Der Titel soll Verbraucher direkt ansprechen, relevante Keywords enthalten und zur {module_info['name']}-Kategorie passen. Vermeide übertriebene Dramatik - Klarheit und Relevanz stehen im Vordergrund.
 
-    Untertitel: Formuliere einen prägnanten Untertitel mit MAXIMAL 3-4 Wörtern (max. 20 Zeichen)
+    **🚨 KRITISCH: Titel darf NICHT länger als 60 Zeichen sein! Lieber kürzer und prägnant als zu lang!**
+
+    **BEISPIELE für gute Titel (alle unter 60 Zeichen):**
+    - "Deutsche Industrie: Wettbewerbsfähigkeit auf Tiefpunkt" (54 Zeichen)
+    - "Google investiert 5 Milliarden in deutsche Infrastruktur" (57 Zeichen)
+    - "Wettbewerbsfähigkeit sinkt: Industrie alarmiert" (48 Zeichen)
+
+    Untertitel: **PFLICHT - DARF NICHT LEER SEIN!** Formuliere einen prägnanten Untertitel mit MAXIMAL 3-4 Wörtern (STRIKT max. 20 Zeichen)
+
+    **BEISPIELE für gute Untertitel:**
+    - "Wirtschaft unter Druck" (22 Zeichen - ok)
+    - "Milliarden-Investition" (21 Zeichen - ok)
+    - "Strukturelle Probleme" (22 Zeichen - ok)
 
     Abstract: Verfasse ein lebendiges, informatives Abstract, das den Kern des Artikels zusammenfasst, relevante Schlüsselwörter aus der {module_info['name']}-Kategorie enthält und die Relevanz des Themas zeigt.
 
@@ -965,24 +1028,27 @@ Wichtig: Direkte Zitate müssen exakt übernommen werden. ALLE ZITATE MÜSSEN IN
     Fokussiere auf praktischen Nutzen für Verbraucher mit konkreten Beispielen
 
     Checkliste (vor dem Absenden prüfen!):
+    ✅ **KRITISCH: Ist der TITEL ausgefüllt, NICHT leer und MAX. 60 Zeichen?** (Ohne Titel kann der Artikel NICHT an die API gesendet werden!)
+    ✅ **KRITISCH: Ist der UNTERTITEL ausgefüllt, NICHT leer und MAX. 20 Zeichen?**
     ✅ Ist der Artikeltext mindestens 350-450 Wörter lang?
     ✅ Hat der Artikel mindestens 4-5 Absätze mit Zwischenüberschriften?
     ✅ Sind alle Zitate korrekt ins Deutsche übersetzt?
     ✅ Sind die Zitate unverändert übernommen worden?
     ✅ Ist überall Vor- und Nachname gesetzt worden?
     ✅ Sind ALLE relevanten Informationen aus dem Quelltext übernommen worden (nichts ausgelassen)?
-    ✅ Sind korrekte Quellenangaben kursiv hervorgehoben worden (Cluster-System)?
+    ✅ **KRITISCH: Sind ALLE Quellenangaben MIT STERNCHEN kursiv? (*ifo Institut*, *Handelsblatt*)**
+    ✅ **KRITISCH: Gibt es KEINE Quellenangaben ohne Sternchen? ("laut dem ifo Institut" ist FALSCH!)**
     ✅ Ist der Ton sachlich aber zugänglich (nicht zu dramatisch, nicht zu trocken)?
     ✅ Enthält das Abstract KEINE Meta-Formulierungen ("Der Artikel...")?
     ✅ Enthält die Metabeschreibung KEINE direkte Ansprache ("Sie", "Erfahren Sie")?
 
-    Der Artikel muss die folgenden Komponenten beinhalten und genau so formatiert sein:
+    🚨 KRITISCH: Der Artikel muss die folgenden Komponenten ZWINGEND beinhalten und genau so formatiert sein:
 
     Titel:
-    [Dein Titel ohne Formatierung]
+    [Dein konkreter Titel HIER - DARF NICHT LEER SEIN! STRIKT max. 60 Zeichen - lieber kürzer!]
 
     Untertitel:
-    [Dein Untertitel ohne Formatierung]
+    [Dein Untertitel HIER - DARF NICHT LEER SEIN! STRIKT max. 20 Zeichen, 3-4 Wörter]
 
     Abstract:
     [Dein Abstract ohne Anführungszeichen und ohne Formatierung]
@@ -1002,13 +1068,16 @@ Wichtig: Direkte Zitate müssen exakt übernommen werden. ALLE ZITATE MÜSSEN IN
     - Keine Sternchen (*) für Formatierung außer bei Quellenangaben
     - Keine Anführungszeichen außer bei direkten Zitaten
     - Keine Zwischenüberschrift vor dem ersten Absatz
-    - Quellenangaben immer kursiv: laut *Finanztip*, so *Stiftung Warentest* berichtet
+    - Quellen IMMER KURSIV: *ifo Institut* (mit einfachen Sternchen)
+    - NIEMALS Quellen in Anführungszeichen: "ifo Institut" ist FALSCH
+    - NIEMALS Quellen ohne Sternchen: "laut dem ifo Institut" ist FALSCH
+    - RICHTIG: laut *ifo Institut*, so *Handelsblatt* berichtet, wie *Finanztip* meldet
 
     Metabeschreibung:
     [Deine Metabeschreibung]
 
     Keywords:
-    [Deine Keywords inkl. {', '.join(module_info['hashtags'][:2])} relevante Begriffe]
+    [Deine Keywords OHNE Hashtags, nur Begriffe kommagetrennt, z.B.: {', '.join([tag.replace('#', '') for tag in module_info['hashtags'][:3]])}, relevante Themenbegriffe]
 
     Hier ist der Text des Entwurfsartikels: {article_text}"""
 
@@ -1057,17 +1126,25 @@ def process_text_for_video_article_long(result_text: str, source_info: str = "")
 - **KEINE Zwischenüberschriften (###)** - nur Fließtext mit Absätzen
 - **KEINE Bulletpoints** - alles in Satzform
 - **Leerzeilen zwischen Absätzen** für bessere Lesbarkeit
-- **Quellenangaben kursiv**: laut *Finanztip*, so *Stiftung Warentest*
 - **Absatzlänge**: 3-5 Sätze pro Absatz
 
+🔗 QUELLENANGABEN (KRITISCH - STRIKT BEFOLGEN):
+- **ALLE Quellennamen IMMER KURSIV**: *ifo Institut*, *Finanztip*, *Stiftung Warentest*, *Handelsblatt*
+- **FORMAT**: laut *Quelle*, *Quelle* berichtet, wie *Quelle* meldet, so *Quelle*
+- **BEISPIELE**: laut *ifo Institut*, so *Handelsblatt* berichtet, wie *Finanztip* meldet
+- **NIEMALS** Quellenangaben ohne Sternchen: "so das ifo Institut" ist FALSCH
+- **RICHTIG**: "so *ifo Institut*" oder "laut *ifo Institut*"
+- **SPARSAM verwenden**: 2-3 Quellenangaben im gesamten Artikel
+- NUR bei wichtigen Fakten, Zahlen oder direkten Zitaten
+
 📏 LÄNGE:
-- Optimal: 200-250 Wörter (NICHT länger!)
-- 4-5 Absätze (kompakt!)
+- Optimal: 150-180 Wörter (NICHT länger!)
+- 3-4 Absätze (kompakt!)
 - Fokus auf das Wichtigste - keine Redundanzen
 
 #️⃣ HASHTAGS (am Ende des Artikels):
 - 3-5 relevante Hashtags
-- Kategoriebasiert: #rente #finanzen #verbraucher #gesundheit #wohnen #lifestyle
+- Kategoriebasiert: #wirtschaft #industrie #rente #finanzen #verbraucher #gesundheit #wohnen #lifestyle
 - Format: Am Ende nach einer Leerzeile
 
 🎨 TONALITÄT (NEUTRAL - KEIN SIEZEN, KEIN DUZEN):
@@ -1090,15 +1167,17 @@ def process_text_for_video_article_long(result_text: str, source_info: str = "")
   * "Nutzen Sie den Freibetrag" → DIREKTES SIEZEN
   * "Hol dir den Freibetrag" → DIREKTES DUZEN
 
-⚡ KRITISCH:
-- Der Hook ist das Wichtigste!
-- KEINE ### Überschriften verwenden
-- KEIN Untertitel, KEIN Abstract
-- Alle wichtigen Infos aus dem Original übernehmen
-- Mit Quellenangaben arbeiten (kursiv)
-- Hashtags am Ende anfügen
+⚡ KRITISCH - CHECKLISTE:
+- ✅ Der Hook ist das Wichtigste!
+- ✅ KEINE ### Überschriften verwenden
+- ✅ KEIN Untertitel, KEIN Abstract
+- ✅ Alle wichtigen Infos aus dem Original übernehmen
+- ✅ **QUELLENANGABEN IMMER KURSIV**: *ifo Institut*, *Handelsblatt*, *Finanztip*
+- ✅ **NIEMALS** Quellen ohne Sternchen: "das ifo Institut" ist FALSCH!
+- ✅ Hashtags am Ende anfügen
+- ✅ Metabeschreibung hinzufügen
 
-BEISPIEL-STRUKTUR (200-250 Wörter, neutrale Tonalität):
+BEISPIEL-STRUKTUR (150-180 Wörter, neutrale Tonalität):
 
 Headline: Witwenrente und Nebenverdienst: 1.076 Euro Freibetrag
 
@@ -1111,6 +1190,8 @@ Bei Überschreitung wird das Einkommen angerechnet. Die Anrechnung variiert je n
 
 Wichtig: Nicht alle Einkommensarten werden angerechnet. Riester-Rente, Wohngeld und Kindergeld bleiben außen vor. Wer die Freibeträge kennt, kann Rente und Nebenverdienst optimal kombinieren.
 
+Metabeschreibung: Witwenrente optimal nutzen: Freibeträge, Anrechnungsregeln und praktische Strategien zur Einkommensoptimierung. Alle wichtigen Infos im Überblick.
+
 #rente #altersvorsorge #finanzen #verbraucher #geldtipps
 
 ---
@@ -1118,13 +1199,18 @@ Wichtig: Nicht alle Einkommensarten werden angerechnet. Riester-Rente, Wohngeld 
 Original-Artikel:
 {result_text}
 
-Erstelle jetzt den Video-Artikel Lang mit starkem Hook und Hashtags:
+Erstelle jetzt den Video-Artikel Lang mit starkem Hook, Metabeschreibung und Hashtags:
 
 Headline:
 [Knackige Headline - max. 60 Zeichen]
 
 Artikeltext:
-[Fließtext OHNE ### Überschriften, mit Hook am Anfang, Hashtags am Ende]"""
+[Fließtext OHNE ### Überschriften, mit Hook am Anfang]
+
+Metabeschreibung:
+[Prägnante Metabeschreibung, 150-160 Zeichen, sachlich ohne "Sie"/"Du"]
+
+[Hashtags am Ende]"""
 
     return generate_text(prompt)
 
@@ -1165,8 +1251,16 @@ def process_text_for_video_article_short(result_text: str, source_info: str = ""
 - **NUR Headline** - KEIN Untertitel, KEIN Abstract
 - **2-3 kurze Absätze** - auf das Wesentliche reduziert
 - **Keine Überschriften im Text**
-- **Quellenangaben kursiv**: laut *Finanztip*, so *Stiftung Warentest*
 - **Kurze, prägnante Sätze**
+
+🔗 QUELLENANGABEN (KRITISCH - STRIKT BEFOLGEN):
+- **ALLE Quellennamen IMMER KURSIV**: *ifo Institut*, *Finanztip*, *Stiftung Warentest*, *Handelsblatt*
+- **FORMAT**: laut *Quelle*, *Quelle* berichtet, wie *Quelle* meldet, so *Quelle*
+- **BEISPIELE**: laut *ifo Institut*, so *Handelsblatt* berichtet, wie *Finanztip* meldet
+- **NIEMALS** Quellenangaben ohne Sternchen: "so das ifo Institut" ist FALSCH
+- **RICHTIG**: "so *ifo Institut*" oder "laut *ifo Institut*"
+- **SPARSAM verwenden**: 1-2 Quellenangaben im Artikel (wegen Kürze)
+- NUR bei den wichtigsten Fakten
 
 📏 LÄNGE:
 - Insgesamt 120-150 Wörter
@@ -1175,7 +1269,7 @@ def process_text_for_video_article_short(result_text: str, source_info: str = ""
 
 #️⃣ HASHTAGS (am Ende des Artikels):
 - 3-5 relevante Hashtags
-- Kategoriebasiert: #rente #finanzen #verbraucher #gesundheit #wohnen #lifestyle
+- Kategoriebasiert: #wirtschaft #industrie #rente #finanzen #verbraucher #gesundheit #wohnen #lifestyle
 - Format: Am Ende nach einer Leerzeile
 
 🎨 TONALITÄT (NEUTRAL - KEIN SIEZEN, KEIN DUZEN):
@@ -1196,14 +1290,16 @@ def process_text_for_video_article_short(result_text: str, source_info: str = ""
   * "Sie können hinzuverdienen" → ZU FORMELL
   * "Du kannst hinzuverdienen" → ZU INFORMELL
 
-⚡ KRITISCH:
-- Der Hook im ersten Satz ist das Wichtigste!
-- Nur die essentiellen Infos - keine Details
-- KEIN Untertitel, KEIN Abstract
-- Extrem kompakt und auf den Punkt
-- Mit Quellenangaben arbeiten (kursiv)
-- Hashtags am Ende
-- Neutrale Sprache ohne direkte Anrede
+⚡ KRITISCH - CHECKLISTE:
+- ✅ Der Hook im ersten Satz ist das Wichtigste!
+- ✅ Nur die essentiellen Infos - keine Details
+- ✅ KEIN Untertitel, KEIN Abstract
+- ✅ Extrem kompakt und auf den Punkt
+- ✅ **QUELLENANGABEN IMMER KURSIV**: *ifo Institut*, *Handelsblatt*, *Finanztip*
+- ✅ **NIEMALS** Quellen ohne Sternchen: "das ifo Institut" ist FALSCH!
+- ✅ Hashtags am Ende
+- ✅ Metabeschreibung hinzufügen
+- ✅ Neutrale Sprache ohne direkte Anrede
 
 BEISPIEL (neutrale Tonalität):
 
@@ -1216,6 +1312,8 @@ Bei Überschreitung wird das Einkommen je nach Art unterschiedlich angerechnet �
 
 Wer die Regelungen kennt, kann Rente und Nebenverdienst optimal kombinieren. Die Überprüfung erfolgt jährlich zum 1. Juli.
 
+Metabeschreibung: Witwenrente und Nebenverdienst: Freibeträge, Anrechnungsregeln und wichtige Informationen zur Einkommensoptimierung kompakt erklärt.
+
 #rente #altersvorsorge #finanzen #verbraucher #geldtipps
 
 ---
@@ -1223,23 +1321,30 @@ Wer die Regelungen kennt, kann Rente und Nebenverdienst optimal kombinieren. Die
 Original-Artikel:
 {result_text}
 
-Erstelle jetzt den Video-Artikel Kurz - extrem kompakt mit starkem Hook und Hashtags:
+Erstelle jetzt den Video-Artikel Kurz - extrem kompakt mit starkem Hook, Metabeschreibung und Hashtags:
 
 Headline:
 [Knackige Headline - max. 60 Zeichen]
 
 Artikeltext:
-[2-3 kurze Absätze mit Hook am Anfang, nur das Wesentliche, Hashtags am Ende]"""
+[2-3 kurze Absätze mit Hook am Anfang, nur das Wesentliche]
+
+Metabeschreibung:
+[Prägnante Metabeschreibung, 150-160 Zeichen, sachlich ohne "Sie"/"Du"]
+
+[Hashtags am Ende]"""
 
     return generate_text(prompt)
 
 def extract_video_article_components(article_result: str) -> tuple:
     """
-    Extrahiert Headline und Artikeltext aus Video-Artikel (ohne Untertitel/Abstract/Meta)
+    Extrahiert Headline, Artikeltext, Metabeschreibung und Hashtags aus Video-Artikel
     """
     headline_pattern = r"Headline:\s*(.*?)\n+"
+    meta_pattern = r"Metabeschreibung:\s*(.*?)\n+(?:#|\Z)"
 
     headline = re.search(headline_pattern, article_result, re.DOTALL)
+    meta = re.search(meta_pattern, article_result, re.DOTALL)
 
     # Extract content
     content = article_result
@@ -1248,11 +1353,17 @@ def extract_video_article_components(article_result: str) -> tuple:
 
     # Remove "Artikeltext:" label
     content = re.sub(r"Artikeltext:\s*\n*", "", content, flags=re.MULTILINE)
+
+    # Remove Metabeschreibung from content
+    if meta:
+        content = re.sub(r"Metabeschreibung:.*?(?:\n+#|\Z)", "", content, flags=re.DOTALL).strip()
+
     content = content.strip()
 
     clean_headline = headline.group(1).strip() if headline else ""
+    clean_meta = meta.group(1).strip() if meta else ""
 
-    return clean_headline, content
+    return clean_headline, content, clean_meta
 
 # ALTE SCRIPT-FUNKTIONEN ENTFERNT - Nicht mehr benötigt
 # process_text_for_video_script_short() - gelöscht
@@ -1321,6 +1432,7 @@ def OLD_process_text_for_video_script_short(result_text):
 
 #️⃣ HASHTAGS (am Ende):
 Füge 3-5 relevante Hashtags hinzu, z.B.:
+- Für Wirtschafts-Themen: #wirtschaft #industrie #unternehmen #standort #konjunktur
 - Für Renten-Themen: #rente #altersvorsorge #finanzen #verbraucher #geldtipps
 - Für Verbraucher-Themen: #verbraucher #verbraucherschutz #spartipps #finanztipps #geldsparen
 - Für Gesundheit: #gesundheit #krankenkasse #verbraucher #gesundheitstipps
@@ -1409,6 +1521,7 @@ def process_text_for_video_script_long(result_text):
 
 #️⃣ HASHTAGS (am Ende):
 Füge 3-5 relevante Hashtags hinzu, z.B.:
+- Für Wirtschafts-Themen: #wirtschaft #industrie #unternehmen #standort #konjunktur
 - Für Renten-Themen: #rente #altersvorsorge #finanzen #verbraucher #geldtipps
 - Für Verbraucher-Themen: #verbraucher #verbraucherschutz #spartipps #finanztipps #geldsparen
 - Für Gesundheit: #gesundheit #krankenkasse #verbraucher #gesundheitstipps
@@ -1565,27 +1678,33 @@ def main():
                         st.markdown("---")
                         st.subheader("📹 Video-Artikel Formate")
 
-                        with st.expander("🎬 Video-Artikel Lang (ohne Zwischenüberschriften, mit Hashtags)", expanded=True):
-                            video_headline_long, video_content_long = extract_video_article_components(video_article_long)
+                        with st.expander("🎬 Video-Artikel Lang (150-180 Wörter, mit Meta & Hashtags)", expanded=True):
+                            video_headline_long, video_content_long, video_meta_long = extract_video_article_components(video_article_long)
                             st.markdown(f"""### {video_headline_long}
 
-{video_content_long}""")
+{video_content_long}
+
+**Metabeschreibung:** {video_meta_long}""")
                             st.caption(f"📊 Wortanzahl: {len(video_content_long.split())} Worte")
 
                             # Speichere Video-Artikel Lang in Session State
                             st.session_state['video_article_long_headline'] = video_headline_long
                             st.session_state['video_article_long_content'] = video_content_long
+                            st.session_state['video_article_long_meta'] = video_meta_long
 
-                        with st.expander("📝 Video-Artikel Kurz (kompakt, mit Hashtags)", expanded=False):
-                            video_headline_short, video_content_short = extract_video_article_components(video_article_short)
+                        with st.expander("📝 Video-Artikel Kurz (120-150 Wörter, mit Meta & Hashtags)", expanded=False):
+                            video_headline_short, video_content_short, video_meta_short = extract_video_article_components(video_article_short)
                             st.markdown(f"""### {video_headline_short}
 
-{video_content_short}""")
+{video_content_short}
+
+**Metabeschreibung:** {video_meta_short}""")
                             st.caption(f"📊 Wortanzahl: {len(video_content_short.split())} Worte")
 
                             # Speichere Video-Artikel Kurz in Session State
                             st.session_state['video_article_short_headline'] = video_headline_short
                             st.session_state['video_article_short_content'] = video_content_short
+                            st.session_state['video_article_short_meta'] = video_meta_short
 
                         send_article_to_pp_fragment()
                         edit_article(article_container)
