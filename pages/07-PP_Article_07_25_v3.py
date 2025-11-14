@@ -1204,7 +1204,7 @@ KATEGORIE-FOKUS: {module_info['focus']}
 ENTERTAINMENT-QUELLENTEXT:
 {article_text}
 
-KRITISCHE ERINNERUNG 
+KRITISCHE ERINNERUNG:
 - JEDES Celebrity-Zitat braucht SOFORT eine Quellenangabe
 - Pro Absatz EINE strategische Quellenangabe bei wichtigen Entertainment-Facts
 - Qualität vor Quantität bei Quellenangaben
@@ -1243,7 +1243,32 @@ WICHTIG: ALLE ZITATE MÜSSEN INS DEUTSCHE ÜBERSETZT WERDEN."""
     - KEYWORDS nutzen aber Details weglassen: Personenname + Themenbereich erwähnen, aber nicht das konkrete Ergebnis verraten
     - BALANCE: Genug Information um Interesse zu wecken, aber Hauptenthüllungen für den Artikel aufsparen
 
-    Artikeltext: Der Artikel soll lang und ausführlich sein (MINDESTENS 450-550 Wörter) und die Informationen des ursprünglichen Entwurfs umschrieben wiedergeben. Nutze deine volle Ausgabemöglichkeit. Strukturiere den Text in so viele Absätze wie nötig und lasse keine relevanten Informationen aus den Entwurfsquellen aus. Strukturiere den Text in mehrere Absätze mit passenden Zwischenüberschriften. Der erste Absatz des Artikeltextes soll keine Zwischenüberschrift bekommen. Halte die Sätze und Strukturen einfach und verwende Ausrufezeichen zur Betonung. Achte darauf, alle Fakten und Daten korrekt zu übernehmen, während du die Sätze, Wörter und den Satzbau veränderst. Wenn Zitate verwendet werden, müssen sie wörtlich und unverändert übernommen werden. Stellen Sie sicher, dass alle im Entwurf erwähnten Themen oder Kategorien im Artikel behandelt werden.
+    Artikeltext: Der Artikel soll lang und ausführlich sein (MINDESTENS 500-600 Wörter) und die Informationen des ursprünglichen Entwurfs umschrieben wiedergeben. Nutze deine volle Ausgabemöglichkeit.
+
+    AUSFÜHRLICHKEITS-REGELN:
+    - Verarbeite alle Details aus den Quellen
+    - Schreibe ausführlich, nicht zusammenfassend
+    - Jeder Absatz sollte 100-120 Wörter umfassen
+    - Füge Kontext und Hintergründe hinzu
+    - Füge beschreibende Details hinzu wie Alter, Outfits, Gesten, Atmosphäre
+    - Nutze konkrete Beschreibungen für visuelle Elemente (z.B. "bauchfreier Zweiteiler", "elegantes Kleid")
+
+    STRUKTUR-ANFORDERUNGEN:
+    - Erstelle 5 Absätze mit passenden ### Zwischenüberschriften
+    - Der erste Absatz (Einstieg) bekommt keine Zwischenüberschrift
+    - Jeder Absatz nach dem Einstieg bekommt eine ### Zwischenüberschrift
+    - Jeder Absatz sollte 100-120 Wörter umfassen
+    - Verarbeite alle relevanten Informationen aus den Quellen
+
+    BEISPIEL-STRUKTUR (wie Konkurrenz-Artikel):
+    1. Einstiegs-Absatz ohne Überschrift (100-120 Wörter)
+    2. ### [Erste Zwischenüberschrift] - Hauptaspekt 1 (100-120 Wörter)
+    3. ### [Zweite Zwischenüberschrift] - Hauptaspekt 2 (100-120 Wörter)
+    4. ### [Dritte Zwischenüberschrift] - Hauptaspekt 3 (100-120 Wörter)
+    5. ### [Vierte Zwischenüberschrift] - Weitere Details (100-120 Wörter)
+    6. ### [Fünfte Zwischenüberschrift] - Abschließende Informationen (100-120 Wörter)
+
+    Halte die Sätze und Strukturen einfach und verwende Ausrufezeichen zur Betonung. Achte darauf, alle Fakten und Daten korrekt zu übernehmen, während du die Sätze, Wörter und den Satzbau veränderst. Wenn Zitate verwendet werden, müssen sie wörtlich und unverändert übernommen werden. Stellen Sie sicher, dass alle im Entwurf erwähnten Themen oder Kategorien im Artikel behandelt werden.
 
     Metabeschreibung: Am Ende des Artikels, füge eine prägnante und nach SEO-Best Practices erstellte Metabeschreibung hinzu, die 150-160 Zeichen nicht überschreitet und den Inhalt des Artikels zusammenfasst.
 
@@ -1253,19 +1278,26 @@ WICHTIG: ALLE ZITATE MÜSSEN INS DEUTSCHE ÜBERSETZT WERDEN."""
     Wähle sorgfältig aus, welche Zitate aus dem Entwurf in den Artikel aufgenommen werden sollen.
     Alle verwendeten Zitate müssen wörtlich und unverändert aus dem Entwurf übernommen werden.
     Übersetze Zitate immer in deutsche Sprache.
-    WICHTIG: SETZE IMMER DIE KOMBINATION AUS VOR- UND NACHNAME.
-    WICHTIG: LASSE KEINE RELEVANTEN INFORMATIONEN AUS DEN ENTWURFSQUELLEN AUS
-    WICHTIG: Verwende korrekte Quellenangaben kursiv: *Bild.de*, *RTL.de*, *Gala.de*
+    Setze immer die Kombination aus Vor- und Nachname.
+    Erwähne das Alter von Personen, wenn es in den Quellen steht (z.B. "Yvonne Catterfeld, 45,")
+    Beschreibe Outfits und visuelle Details, wenn sie in den Quellen erwähnt werden (z.B. "bauchfreier Zweiteiler", "elegantes Abendkleid")
+    Verwende alle relevanten Informationen aus den Entwurfsquellen.
+    Verwende korrekte Quellenangaben kursiv: *Bild.de*, *RTL.de*, *Gala.de*
     Der restliche Artikel soll vollständig umgeschrieben werden.
     Versuche Dopplungen im Text zu vermeiden, indem du verwandte Themen und Informationen jeweils nur einmal explizit darstellst und in späteren Absätzen gegebenenfalls indirekt darauf verweist.
 
     Checkliste:
-    Sind alle Zitate korrekt ins Deutsche übersetzt?
-    Sind die Zitate unverändert übernommen worden?
-    Ist überall Vor- und Nachname gesetzt worden?
-    Sind alle relevanten Informationen aus den Entwurfsquellen übernommen wurden?
-    Sind korrekte Quellenangaben kursiv hervorgehoben worden?
-    Wurden nur die verfügbaren echten Zitate verwendet?
+    - Sind 500-600 Wörter im Artikeltext erreicht?
+    - Gibt es 5 Absätze mit ### Zwischenüberschriften (außer dem ersten Absatz)?
+    - Hat jeder Absatz 100-120 Wörter?
+    - Sind alle Zitate korrekt ins Deutsche übersetzt?
+    - Sind die Zitate unverändert übernommen worden?
+    - Ist überall Vor- und Nachname gesetzt worden?
+    - Wurde das Alter von Personen erwähnt, wenn es in den Quellen steht?
+    - Wurden Outfit-Details beschrieben, wenn sie in den Quellen erwähnt sind?
+    - Sind alle relevanten Informationen aus den Entwurfsquellen übernommen wurden?
+    - Sind korrekte Quellenangaben kursiv hervorgehoben worden?
+    - Wurden nur die verfügbaren echten Zitate verwendet?
 
     Der Artikel muss die folgenden Komponenten beinhalten und genau so formatiert sein:
 
@@ -1497,7 +1529,7 @@ def main():
                     source_info = create_source_info_promipool(urls, uploaded_file, bool(user_text.strip()), url_contents if 'url_contents' in locals() else {})
 
                     # 1. Standard Artikel
-                    st.info("📰 Generiere Standard-Artikel (400-600 Wörter, emotional)...")
+                    st.info("📰 Generiere Standard-Artikel (500-600 Wörter, emotional, 5 Absätze)...")
                     result_standard = process_text_for_seo_enhanced_promipool(original_text, source_info, custom_instructions)
 
                     # 2. Video-Artikel Lang
@@ -1526,7 +1558,7 @@ def main():
                         if original_text:
                             # ==================== STANDARD ARTIKEL ====================
                             st.markdown("## 📰 Standard Artikel")
-                            st.markdown("*400-600 Wörter, emotionaler Stil, Zwischenüberschriften*")
+                            st.markdown("*500-600 Wörter, emotionaler Stil, 5 Absätze mit Zwischenüberschriften*")
                             st.markdown("---")
 
                             title_std, subtitle_std, abstract_std, content_std, meta_std = extract_article_components(result_standard)
