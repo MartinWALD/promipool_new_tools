@@ -953,13 +953,31 @@ Wichtig: Direkte Zitate müssen exakt übernommen werden. ALLE ZITATE MÜSSEN IN
 
     🚨 NOCHMAL: NIEMALS "Der Artikel..." oder "Sie/Erfahren Sie" verwenden!
 
-    Artikeltext: Der Artikel soll ausführlich, detailliert und informativ sein.
+    Artikeltext: Der Artikel soll ausführlich, detailliert und informativ sein (MINDESTENS 500-600 Wörter).
 
-    🚨 KRITISCHE ANFORDERUNGEN AN ARTIKELLÄNGE UND DETAIL-TIEFE:
-    - **MINDESTLÄNGE: 350-450 Wörter** (nicht kürzer!)
-    - **MINDESTENS 4-5 Absätze** mit Zwischenüberschriften (erster Absatz ohne Überschrift)
-    - Jeder Absatz sollte substantiell sein (nicht nur 2-3 Sätze)
-    - **LASSE KEINE DETAILS AUS** - der Artikel darf NICHT oberflächlich sein!
+    AUSFÜHRLICHKEITS-REGELN:
+    - Verarbeite ALLE Details aus den Quellen - nichts weglassen!
+    - Schreibe ausführlich, nicht zusammenfassend
+    - Jeder Absatz sollte 100-120 Wörter umfassen (lieber mehr!)
+    - Füge Kontext und Hintergründe hinzu
+    - Füge beschreibende Details hinzu (Zahlen, Experten-Meinungen, Positionen, Beispiele)
+    - Nutze konkrete Beschreibungen für Personen (Name + Position + Organisation)
+    - Entwickle jeden Aspekt in 2-3 Sätzen, nicht nur in einem
+    - Nutze Zitate aus den Quellen für mehr Tiefe
+
+    STRUKTUR-ANFORDERUNGEN:
+    - Erstelle 5 Absätze mit passenden ### Zwischenüberschriften
+    - Der erste Absatz (Einstieg) bekommt keine Zwischenüberschrift
+    - Jeder Absatz sollte 100-120 Wörter umfassen
+    - Verarbeite alle relevanten Informationen aus den Quellen
+
+    BEISPIEL-STRUKTUR:
+    1. Einstiegs-Absatz ohne Überschrift (100-120 Wörter)
+    2. ### [Erste Zwischenüberschrift] (100-120 Wörter)
+    3. ### [Zweite Zwischenüberschrift] (100-120 Wörter)
+    4. ### [Dritte Zwischenüberschrift] (100-120 Wörter)
+    5. ### [Vierte Zwischenüberschrift] (100-120 Wörter)
+    6. ### [Fünfte Zwischenüberschrift] (100-120 Wörter)
 
     WICHTIGE REGELN FÜR DEN ARTIKELTEXT:
     - 🚨 **KRITISCH: Übernimm ALLE wichtigen Informationen aus dem Quelltext - NICHTS weglassen!**
@@ -1022,16 +1040,23 @@ Wichtig: Direkte Zitate müssen exakt übernommen werden. ALLE ZITATE MÜSSEN IN
     Besonderheiten:
     Alle verwendeten Zitate müssen wörtlich übernommen werden.
     Übersetze Zitate immer in deutsche Sprache.
-    WICHTIG: SETZE IMMER DIE KOMBINATION AUS VOR- UND NACHNAME.
-    KRITISCH: LASSE KEINE RELEVANTEN INFORMATIONEN AUS - übernimm Details, Zahlen, Regelungen
-    WICHTIG: Verwende korrekte Quellenangaben kursiv: *Finanztip*, *Stiftung Warentest*
+    Setze immer die Kombination aus Vor- und Nachname.
+    PFLICHT: Erwähne ALLE wichtigen Personen mit Position und Organisation (z.B. "Finanzminister Lars Klingbeil (SPD)", "Ökonom Stefan Bach vom DIW")
+    WICHTIG: Wenn Politiker, Minister oder Regierungsvertreter in den Quellen erwähnt werden, müssen diese mit Position und Partei im Artikel erscheinen
+    Verwende alle relevanten Informationen aus den Entwurfsquellen - nichts weglassen!
+    Verwende korrekte Quellenangaben kursiv: *Finanztip*, *Stiftung Warentest*, *Merkur*
     Fokussiere auf praktischen Nutzen für Verbraucher mit konkreten Beispielen
+    Nutze verfügbare Zitate aus den Quellen für mehr Substanz
 
     Checkliste (vor dem Absenden prüfen!):
     ✅ **KRITISCH: Ist der TITEL ausgefüllt, NICHT leer und MAX. 60 Zeichen?** (Ohne Titel kann der Artikel NICHT an die API gesendet werden!)
     ✅ **KRITISCH: Ist der UNTERTITEL ausgefüllt, NICHT leer und MAX. 20 Zeichen?**
-    ✅ Ist der Artikeltext mindestens 350-450 Wörter lang?
-    ✅ Hat der Artikel mindestens 4-5 Absätze mit Zwischenüberschriften?
+    ✅ Ist der Artikeltext MINDESTENS 500 Wörter lang? (Besser 550-600!)
+    ✅ Hat der Artikel 5 Absätze mit Zwischenüberschriften (außer dem ersten)?
+    ✅ Hat jeder Absatz 100-120 Wörter (lieber mehr als weniger)?
+    ✅ Wurden ALLE wichtigen Personen mit Position und Organisation erwähnt? (z.B. Finanzminister + Name + Partei)
+    ✅ Wurden ALLE Zitate aus den Quellen verwendet?
+    ✅ Wurden ALLE wichtigen Details verarbeitet (nichts ausgelassen)?
     ✅ Sind alle Zitate korrekt ins Deutsche übersetzt?
     ✅ Sind die Zitate unverändert übernommen worden?
     ✅ Ist überall Vor- und Nachname gesetzt worden?
@@ -1102,17 +1127,23 @@ def process_text_for_video_article_long(result_text: str, source_info: str = "")
 - PFLICHT: Konkrete Zahl, Betrag oder Anzahl in den ersten 8-12 Worten
 - Schockierend, überraschend oder dringend
 
-🔥 HOOK-FORMELN:
-1. **Konkrete Summe + Versprechen**: "[Betrag] geschenkt! So..."
-2. **Warnung + Konkreter Verlust**: "Achtung: Dieser Fehler kostet [Betrag]!"
-3. **Anzahl Betroffene + Relevanz**: "[Millionen] Menschen betroffen!"
-4. **Zeitdruck + Vorteil**: "Nur noch bis [Datum]: [Betrag] sichern!"
-5. **Schock-Element**: "Krass: Hier verschenken Deutsche [Betrag]!"
+🔥 HOOK-FORMELN (sachlich aber stark):
+1. **Konkrete Zahlen/Datum + Sachinfo**: "Ab 2026: [Maßnahme] betrifft [Millionen] Deutsche"
+2. **Betrag + Relevanz**: "[Betrag] mehr: Diese Steuererhöhung kommt"
+3. **Experten-Warnung**: "Ökonom warnt: [Konkrete Auswirkung]"
+4. **Mehrwertsteuer-Schock**: "Mehrwertsteuer steigt: [Konkrete Folge]"
+5. **Zahlen-basiert**: "[Prozent/Millionen] betroffen: [Was kommt]"
 
-✅ PERFEKTE HOOK-BEISPIELE:
-  * "1.076 Euro geschenkt! So nutzen Rentner den Freibetrag optimal."
-  * "Achtung: Dieser Fehler kostet Rentner 430 Euro monatlich!"
-  * "21 Millionen Rentner betroffen – das ändert sich ab Januar!"
+✅ PERFEKTE HOOK-BEISPIELE (sachlich-neutral):
+  * "Ab 2026: Steuererhöhungen treffen deutsche Steuerzahler"
+  * "Mehrwertsteuer steigt: Das zahlen Verbraucher mehr"
+  * "Finanzminister plant: 1% Vermögensteuer ab 25 Millionen Euro"
+  * "Ökonom warnt: Sozialleistungen könnten gekürzt werden"
+
+❌ VERMEIDE (zu reißerisch):
+  * "Achtung: Steuererhöhungen kosten Milliarden!" (zu alarmistisch)
+  * "Steuerzahler aufgepasst!" (zu Boulevard)
+  * "Krass: Hier zahlen Deutsche drauf!" (zu BILD-Stil)
 
 📊 ARTIKEL-STRUKTUR:
 1. **Hook-Absatz** (2-3 Sätze): Starker Einstieg mit Zahl/Betrag
@@ -1138,9 +1169,9 @@ def process_text_for_video_article_long(result_text: str, source_info: str = "")
 - NUR bei wichtigen Fakten, Zahlen oder direkten Zitaten
 
 📏 LÄNGE:
-- Optimal: 150-180 Wörter (NICHT länger!)
-- 3-4 Absätze (kompakt!)
-- Fokus auf das Wichtigste - keine Redundanzen
+- Optimal: 150-180 Wörter
+- 3-4 Absätze (kompakt aber ausführlich!)
+- Fokus auf das Wichtigste - alle wichtigen Infos rein (Personen, Zahlen, Maßnahmen)
 
 #️⃣ HASHTAGS (am Ende des Artikels):
 - 3-5 relevante Hashtags
@@ -1231,15 +1262,19 @@ def process_text_for_video_article_short(result_text: str, source_info: str = ""
 - PFLICHT: Konkrete Zahl, Betrag oder Anzahl in den ersten 8-12 Worten
 - Schockierend, überraschend oder dringend
 
-🔥 HOOK-FORMELN:
-1. **Konkrete Summe + Versprechen**: "[Betrag] geschenkt! So..."
-2. **Warnung + Konkreter Verlust**: "Achtung: Dieser Fehler kostet [Betrag]!"
-3. **Anzahl Betroffene + Relevanz**: "[Millionen] Menschen betroffen!"
+🔥 HOOK-FORMELN (sachlich-neutral):
+1. **Konkrete Zahlen/Datum + Sachinfo**: "Ab 2026: [Maßnahme]"
+2. **Betrag + Relevanz**: "[Betrag]: [Was kommt]"
+3. **Experten-Statement**: "Ökonom: [Konkrete Aussage]"
 
-✅ PERFEKTE HOOK-BEISPIELE:
-  * "1.076 Euro geschenkt! So nutzen Rentner den Freibetrag optimal."
-  * "Achtung: Dieser Fehler kostet Rentner 430 Euro monatlich!"
-  * "21 Millionen Rentner betroffen – das ändert sich ab Januar!"
+✅ PERFEKTE HOOK-BEISPIELE (sachlich-neutral):
+  * "Ab 2026: Steuererhöhungen für deutsche Steuerzahler"
+  * "Mehrwertsteuer steigt: Verbraucher zahlen mehr"
+  * "1% Vermögensteuer ab 25 Millionen Euro geplant"
+
+❌ VERMEIDE (zu reißerisch):
+  * "Achtung: Steuererhöhungen ab 2026!" (zu alarmistisch)
+  * "1.076 Euro geschenkt!" (zu werblich)
 
 📊 ARTIKEL-STRUKTUR:
 1. **Hook-Absatz** (2-3 Sätze): Starker Einstieg mit Zahl/Betrag + Kern der Info
@@ -1263,9 +1298,9 @@ def process_text_for_video_article_short(result_text: str, source_info: str = ""
 - NUR bei den wichtigsten Fakten
 
 📏 LÄNGE:
-- Insgesamt 120-150 Wörter
-- Extrem kompakt - nur die wichtigsten Infos
-- Keine unnötigen Details
+- Insgesamt 100-120 Wörter
+- Kompakt - nur die wichtigsten Infos
+- Personen mit Position, Zahlen, Kernmaßnahmen erwähnen
 
 #️⃣ HASHTAGS (am Ende des Artikels):
 - 3-5 relevante Hashtags
